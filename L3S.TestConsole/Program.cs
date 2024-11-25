@@ -11,16 +11,16 @@ namespace L3S.TestConsole
         {
             //var summary = BenchmarkRunner.Run<MiBenchmarckAnashei>();
             //Console.WriteLine(summary);
-            MiBenchmarckAnashei.MiFuncion();
+            MiBenchmarck.MiFuncion();
         }
     }
 
-    public class MiBenchmarckAnashei
+    public class MiBenchmarck
     {
         [Benchmark]
         public static void MiFuncion()
         {
-            var path = Path.GetFullPath("");
+            var path = Path.GetFullPath("C:\\Users\\Santi\\source\\repos\\Nugets\\L3S.FromExcelToListClass\\L3S.FromExcelToListClass\\Excels\\");
             var directory = new DirectoryInfo(path);
 
             foreach (var file in directory.GetFiles())

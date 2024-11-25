@@ -1,4 +1,4 @@
-﻿using FromExcelToListClass.CustomValidators;
+﻿using L3S.FromExcelToListClass.CustomValidators;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -6,7 +6,9 @@ namespace L3S.FromExcelToListClass.Models
 {
     public class PublicacionExcelDTO
     {
-        [Required]
+        [Required(AllowEmptyStrings = true)]
+        [MaxLength(50)]
+        [AllowNull]
         public string Nombre { get; set; }
 
         [Required]
@@ -33,12 +35,11 @@ namespace L3S.FromExcelToListClass.Models
         [Required]
         public string Provincia { get; set; }
 
-        [Required]
-        [AllowNull]
+        [RequiredButNullable]
         public string Zona { get; set; }
 
         [Required]
-        [BoolCustomValidator("Habilitada", "Deshabilitada")]
+        [CustomValidBoolEntry("Habilitada", "Deshabilitada")]
         public bool Estado { get; set; }
 
     }

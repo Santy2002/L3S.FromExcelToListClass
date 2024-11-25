@@ -1,4 +1,4 @@
-﻿using FromExcelToListClass.CustomValidators;
+﻿using L3S.FromExcelToListClass.CustomValidators;
 using L3S.FromExcelToListClass.Models.DTO;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.Formula.Functions;
@@ -275,9 +275,18 @@ namespace L3S.FromExcelToListClass
 
         private static PropertyDTO ParseCellToType(ICell celda, PropertyInfo property)
         {
-            var result = new PropertyDTO() { Error = false, ErrorMessage = string.Empty };
+            var result = new PropertyDTO() { Error = false, ErrorMessage = "No se pudo procesar la celda OBLIGATORIA COL: {0} FILA: {1}\n" };
             object parsedValue = null;
             string cellStringValue = celda?.ToString();
+
+            var validationErrors = CheckValueWithValidationAttributes(property, cellStringValue);
+
+            if (validationErrors.Error)
+            {
+                result.Error = true;
+                result.ErrorMessage += validationErrors.ErrorMessage;
+                return result;
+            }
 
             switch (Type.GetTypeCode(property.PropertyType))
             {
@@ -303,9 +312,9 @@ namespace L3S.FromExcelToListClass
                     break;
 
                 case TypeCode.Boolean:
-                    if (Attribute.IsDefined(property, typeof(BoolCustomValidator)))
+                    if (Attribute.IsDefined(property, typeof(CustomValidBoolEntryAttribute)))
                     {
-                        if (property.GetCustomAttribute<BoolCustomValidator>().BoolCustomTryParse(cellStringValue, out bool parsedBool))
+                        if (property.GetCustomAttribute<CustomValidBoolEntryAttribute>().BoolCustomTryParse(cellStringValue, out bool parsedBool))
                         {
                             parsedValue = parsedBool;
                         }
@@ -356,10 +365,9 @@ namespace L3S.FromExcelToListClass
                     break;
             }
 
-            if ((parsedValue == null || cellStringValue == null || cellStringValue == string.Empty) && Attribute.IsDefined(property, typeof(AllowNullAttribute)))
+            if ((parsedValue == null || string.IsNullOrEmpty(cellStringValue)) && Attribute.IsDefined(property, typeof(AllowNullAttribute)))
             {
                 result.Error = true;
-                result.ErrorMessage = "No se pudo procesar la celda OBLIGATORIA COL: {0} FILA: {1}\n";
                 return result;
             }
 
@@ -367,5 +375,29 @@ namespace L3S.FromExcelToListClass
             return result;
         }
 
+        private static ResultDTO CheckValueWithValidationAttributes(PropertyInfo property, object value)
+        {
+            var result = new ResultDTO() { Error = false, ErrorMessage = "" };
+
+            var validadores = property.GetCustomAttributes()
+            .OfType<ValidationAttribute>()
+            .ToList();
+
+            if (!validadores.Any())
+            {
+                return result;
+            }
+
+            foreach (var validador in validadores)
+            {
+                if (!validador.IsValid(value))
+                {
+                    result.ErrorMessage += validador.ErrorMessage + "\n";
+                }
+            }
+
+            return result;
+
+        }
     }
 }

@@ -2,14 +2,14 @@
 using System.ComponentModel.DataAnnotations;
 
 
-namespace FromExcelToListClass.CustomValidators
+namespace L3S.FromExcelToListClass.CustomValidators
 {
-    public class BoolCustomValidator : ValidationAttribute
+    public class CustomValidBoolEntryAttribute : ValidationAttribute
     {
         private string TrueValue { get; }
         private string FalseValue { get; }
 
-        public BoolCustomValidator(string trueValue, string falseValue)
+        public CustomValidBoolEntryAttribute(string trueValue, string falseValue)
         {
             TrueValue = trueValue.ToLower();
             FalseValue = falseValue.ToLower();
