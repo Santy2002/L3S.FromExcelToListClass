@@ -15,7 +15,7 @@ using System.Text;
 namespace L3S.FromExcelToListClass
 {
     public class FromExcelToListClass<T> where T : class, IExcelEntity
-    {
+    {                                                                                //This is horrible, change it accesing the IExcelEntity somehow
         public static readonly PropertyInfo[] Properties = typeof(T).GetProperties().Where(x => x.Name != "Row" && x.Name != "Error").ToArray();
 
         #region Queue Dict
@@ -397,7 +397,6 @@ namespace L3S.FromExcelToListClass
             }
 
             return result;
-
         }
     }
 }
