@@ -11,7 +11,7 @@ namespace L3S.FromExcelToListClass.CustomValidators
 
         public override bool IsValid(object value)
         {
-            return base.IsValid(value);
+            return true;
         }
     }
 }

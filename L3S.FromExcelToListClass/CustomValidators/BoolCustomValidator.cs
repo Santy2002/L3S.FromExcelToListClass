@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace L3S.FromExcelToListClass.CustomValidators
 {
-    public class CustomValidBoolEntryAttribute : ValidationAttribute
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = false)]
+    public class CustomValidBoolEntryAttribute : Attribute
     {
         private string TrueValue { get; }
         private string FalseValue { get; }

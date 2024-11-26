@@ -1,14 +1,17 @@
 ﻿using L3S.FromExcelToListClass.CustomValidators;
+using L3S.FromExcelToListClass.Enums;
+using L3S.FromExcelToListClass.Interface;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace L3S.FromExcelToListClass.Models
 {
-    public class PublicacionExcelDTO
+    public class PublicacionExcelDTO : IExcelEntity
     {
-        [Required(AllowEmptyStrings = true)]
-        [MaxLength(50)]
-        [AllowNull]
+        public int Row { get; set; }
+        public Errors Error { get; set; }
+
+        [RequiredButNullable]
         public string Nombre { get; set; }
 
         [Required]
@@ -35,12 +38,15 @@ namespace L3S.FromExcelToListClass.Models
         [Required]
         public string Provincia { get; set; }
 
+        [Required]
         [RequiredButNullable]
         public string Zona { get; set; }
 
         [Required]
         [CustomValidBoolEntry("Habilitada", "Deshabilitada")]
         public bool Estado { get; set; }
+
+
 
     }
 

@@ -1,4 +1,5 @@
 ﻿using L3S.FromExcelToListClass.CustomValidators;
+using L3S.FromExcelToListClass.Interface;
 using L3S.FromExcelToListClass.Models.DTO;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.Formula.Functions;
@@ -13,9 +14,9 @@ using System.Text;
 
 namespace L3S.FromExcelToListClass
 {
-    public class FromExcelToListClass<T> where T : class
+    public class FromExcelToListClass<T> where T : class, IExcelEntity
     {
-        public static readonly PropertyInfo[] Properties = typeof(T).GetProperties();
+        public static readonly PropertyInfo[] Properties = typeof(T).GetProperties().Where(x => x.Name != "Row" && x.Name != "Error").ToArray();
 
         #region Queue Dict
         public static readonly Queue<Dictionary<string, string>> QueueDictionary = new Queue<Dictionary<string, string>>();
@@ -144,7 +145,7 @@ namespace L3S.FromExcelToListClass
         private static string[] GetRequiredHeaders()
         {
             return Properties
-                .Where(prop => Attribute.IsDefined(prop, typeof(RequiredAttribute)))
+                .Where(prop => Attribute.IsDefined(prop, typeof(RequiredAttribute)) || Attribute.IsDefined(prop, typeof(RequiredButNullableAttribute)))
                 .Select(prop => prop.Name)
                 .ToArray();
         }
@@ -352,7 +353,6 @@ namespace L3S.FromExcelToListClass
 
                     else
                     {
-
                         if (!string.IsNullOrEmpty(cellStringValue))
                         {
                             parsedValue = Convert.ChangeType(cellStringValue, property.PropertyType);
@@ -365,7 +365,7 @@ namespace L3S.FromExcelToListClass
                     break;
             }
 
-            if ((parsedValue == null || string.IsNullOrEmpty(cellStringValue)) && Attribute.IsDefined(property, typeof(AllowNullAttribute)))
+            if ((parsedValue == null || string.IsNullOrEmpty(cellStringValue)) && !Attribute.IsDefined(property, typeof(RequiredButNullableAttribute)))
             {
                 result.Error = true;
                 return result;
