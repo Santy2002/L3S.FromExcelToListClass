@@ -11,5 +11,6 @@ namespace L3S.FromExcelToListClass.Interface
     {
         int Row { get; set; }
         Errors Error { get; set; }
+        public string TotalErrors { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 {
     public enum Errors
     {
+        FileError,
         HeaderError,
         ValidationError,
         ParseError,

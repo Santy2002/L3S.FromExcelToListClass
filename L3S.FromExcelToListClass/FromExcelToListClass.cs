@@ -1,4 +1,5 @@
 ﻿using L3S.FromExcelToListClass.CustomValidators;
+using L3S.FromExcelToListClass.Enums;
 using L3S.FromExcelToListClass.Interface;
 using L3S.FromExcelToListClass.Models.DTO;
 using NPOI.HSSF.UserModel;
@@ -12,14 +13,21 @@ using System.Reflection.Metadata;
 using System.Text;
 
 
-namespace L3S.FromExcelToListClass
+namespace CambioEstadoMasivoDePublicaciones.FromExcelToListClass
 {
     public class FromExcelToListClass<T> where T : class, IExcelEntity
-    {                                                                                //This is horrible, change it accesing the IExcelEntity somehow
-        public static readonly PropertyInfo[] Properties = typeof(T).GetProperties().Where(x => x.Name != "Row" && x.Name != "Error").ToArray();
+    {
+        #region Properties
+        //This is horrible, change it accesing the IExcelEntity somehow
+        public static readonly PropertyInfo[] Properties = typeof(T).GetProperties().Where(x => x.Name != "Row" && x.Name != "Error" && x.Name != "TotalErrors").ToArray();
+        public static readonly PropertyInfo Row = typeof(T).GetProperty("Row");
+        public static readonly PropertyInfo Error = typeof(T).GetProperty("Error");
+        public static readonly PropertyInfo TotalErrors = typeof(T).GetProperty("TotalErrors");
+
+        #endregion Properties
 
         #region Queue Dict
-        public static readonly Queue<Dictionary<string, string>> QueueDictionary = new Queue<Dictionary<string, string>>();
+        public static readonly Queue<Dictionary<string, string>> QueueDictionary = new();
         private static Dictionary<string, string> GetDictionaryFromPool()
         {
             return QueueDictionary.Count > 0 ? QueueDictionary.Dequeue() : new Dictionary<string, string>();
@@ -31,9 +39,10 @@ namespace L3S.FromExcelToListClass
         }
         #endregion Queue Dict
 
-        public TResultDTO<T> ParseExcelToClass(FileInfo file)
+        public List<T> ParseExcelToClass(FileInfo file)
         {
-            var result = new TResultDTO<T>();
+            var ListResultT = new List<T>();
+            var FirstValidations = new PropResultDTO<T>(Activator.CreateInstance<T>());
 
             #region Validaciones
 
@@ -43,9 +52,9 @@ namespace L3S.FromExcelToListClass
 
             if (sheetResult.Error)
             {
-                result.Error = sheetResult.Error;
-                result.ErrorMessage = string.Format("Error de validacion.\n{0}", sheetResult.ErrorMessage);
-                return result;
+                Error.SetValue(FirstValidations.Objeto, Errors.FileError);
+                ListResultT.Add(FirstValidations.Objeto);
+                return ListResultT;
             }
 
             #endregion Tipo de Archivo
@@ -60,18 +69,17 @@ namespace L3S.FromExcelToListClass
 
             if (checkHeaders.Error)
             {
-                result.Error = checkHeaders.Error;
-                result.ErrorMessage = string.Format("Error de validacion en los encabezados. No se procesara el archivo: {0}.\nInconsistencias:\n{1}", file.Name, checkHeaders.ErrorMessage);
-                return result;
+                TotalErrors.SetValue(FirstValidations.Objeto, checkHeaders.ErrorMessage);
+                Error.SetValue(FirstValidations.Objeto, Errors.HeaderError);
+                ListResultT.Add(FirstValidations.Objeto);
+                return ListResultT;
             }
 
             #endregion Headers
 
             #endregion Validaciones
 
-            var msgErrorTotal = new StringBuilder().Append("Error de formato en:\n");
-
-            for (int i = 1; i <= sheet.LastRowNum; i++)
+            for (int i = 1; i <= 1000; i++)
             {
                 var row = sheet.GetRow(i);
 
@@ -79,18 +87,20 @@ namespace L3S.FromExcelToListClass
 
                 var cellResult = ParseRowToClass(row, headerRow, requiredHeaders.Length, headerRow.LastCellNum);
 
+                Row.SetValue(cellResult.Objeto, i);
+
                 if (cellResult.Error)
                 {
-                    result.Error = true;
-                    msgErrorTotal.Append(cellResult.ErrorMessage);
+                    Error.SetValue(cellResult.Objeto, cellResult.Objeto.Error);
+                    TotalErrors.SetValue(cellResult.Objeto, cellResult.Objeto.TotalErrors);
+                    ListResultT.Add(cellResult.Objeto);
                     continue;
                 }
 
-                result.ListResultT.Add(cellResult.Objeto);
+                ListResultT.Add(cellResult.Objeto);
             }
 
-            result.ErrorMessage = msgErrorTotal.ToString();
-            return result;
+            return ListResultT;
         }
 
         public static ResultDTO CheckHeaders(IRow headerRow, string[] requiredHeaders)
@@ -168,7 +178,6 @@ namespace L3S.FromExcelToListClass
                 }
 
                 result.Error = true;
-                result.ErrorMessage = string.Format("Se esperaba archivo con formato .xls o .xlsx en: {0}", file.Name);
 
                 return result;
             }
@@ -232,16 +241,18 @@ namespace L3S.FromExcelToListClass
 
                 var parsedCell = ParseCellToType(celda, propiedad);
 
+                Row.SetValue(GenericObj, row.RowNum + 1);
+
                 if (parsedCell.Error)
                 {
                     result.Error = parsedCell.Error;
-                    msgError.AppendFormat(parsedCell.ErrorMessage, celda?.ColumnIndex + 1 ?? j + 1, celda?.RowIndex + 1 ?? row.RowNum + 1);
+                    Error.SetValue(GenericObj, parsedCell.Property);
+                    msgError.AppendFormat(parsedCell.ErrorMessage, celda?.ColumnIndex + 1 ?? j + 1);
                     continue;
                 }
 
                 propiedad.SetValue(GenericObj, parsedCell.Property);
             }
-
 
             #endregion Columnas Obligatoias
 
@@ -269,14 +280,14 @@ namespace L3S.FromExcelToListClass
 
             #endregion Columnas Opcionales
 
-            result.ErrorMessage = msgError.ToString();
+            TotalErrors.SetValue(GenericObj, msgError.ToString());
             result.Objeto = GenericObj;
             return result;
         }
 
         private static PropertyDTO ParseCellToType(ICell celda, PropertyInfo property)
         {
-            var result = new PropertyDTO() { Error = false, ErrorMessage = "No se pudo procesar la celda OBLIGATORIA COL: {0} FILA: {1}\n" };
+            var result = new PropertyDTO() { Error = false, ErrorMessage = string.Empty };
             object parsedValue = null;
             string cellStringValue = celda?.ToString();
 
@@ -284,8 +295,9 @@ namespace L3S.FromExcelToListClass
 
             if (validationErrors.Error)
             {
+                result.Property = Errors.ValidationError;
+                result.ErrorMessage += "No se pudo VALIDAR la celda OBLIGATORIA COL: {0}:\n" + validationErrors.ErrorMessage;
                 result.Error = true;
-                result.ErrorMessage += validationErrors.ErrorMessage;
                 return result;
             }
 
@@ -367,6 +379,8 @@ namespace L3S.FromExcelToListClass
 
             if ((parsedValue == null || string.IsNullOrEmpty(cellStringValue)) && !Attribute.IsDefined(property, typeof(RequiredButNullableAttribute)))
             {
+                result.Property = Errors.ParseError;
+                result.ErrorMessage += "No se pudo PROCESAR la celda OBLIGATORIA COL: {0}\n";
                 result.Error = true;
                 return result;
             }
@@ -392,6 +406,7 @@ namespace L3S.FromExcelToListClass
             {
                 if (!validador.IsValid(value))
                 {
+                    result.Error = true;
                     result.ErrorMessage += validador.ErrorMessage + "\n";
                 }
             }

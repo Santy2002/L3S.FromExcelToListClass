@@ -10,6 +10,7 @@ namespace L3S.FromExcelToListClass.Models
     {
         public int Row { get; set; }
         public Errors Error { get; set; }
+        public string TotalErrors { get; set; }
 
         [RequiredButNullable]
         public string Nombre { get; set; }
