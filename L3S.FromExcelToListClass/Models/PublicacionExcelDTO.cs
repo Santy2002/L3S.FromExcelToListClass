@@ -1,8 +1,7 @@
 ﻿using L3S.FromExcelToListClass.CustomValidators;
 using L3S.FromExcelToListClass.Enums;
-using L3S.FromExcelToListClass.Interface;
+using L3S.FromExcelToListClass.Interfaces;
 using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.CodeAnalysis;
 
 namespace L3S.FromExcelToListClass.Models
 {

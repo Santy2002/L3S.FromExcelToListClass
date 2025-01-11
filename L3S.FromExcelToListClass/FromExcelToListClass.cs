@@ -1,6 +1,6 @@
 ﻿using L3S.FromExcelToListClass.CustomValidators;
 using L3S.FromExcelToListClass.Enums;
-using L3S.FromExcelToListClass.Interface;
+using L3S.FromExcelToListClass.Interfaces;
 using L3S.FromExcelToListClass.Models.DTO;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.Formula.Functions;
@@ -13,7 +13,7 @@ using System.Reflection.Metadata;
 using System.Text;
 
 
-namespace CambioEstadoMasivoDePublicaciones.FromExcelToListClass
+namespace L3S.FromExcelToListClass
 {
     public class FromExcelToListClass<T> where T : class, IExcelEntity
     {
